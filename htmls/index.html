@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalculatorApp</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
+    <style>
+        .pad-btn {
+            padding: 10px 40px;
+        }
+
+        .mycontainer {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 50px;
+            flex-wrap: wrap;
+        }
+
+        .hideWarning {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .warning {
+            color: red;
+            transition: opacity .2s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>CalculatorApp</h1>
+        <form action="" method="post" id="calc">
+            <h3>
+                <label for="num1">Input Number 1 </label>
+            </h3>
+            <input name="num1" id="num1" type="text" class="form-control" required>
+            <span class="warning  hideWarning" id="num1Error">Invalid Value please check your
+                input
+            </span>
+            <h3>
+                <label for="num2">Input Number 2</label>
+            </h3>
+            <input name="num2" id="num2" type="text" class="form-control" required>
+            <span class="warning hideWarning" id="num2Error">Invalid Value please check your
+                input
+            </span>
+            <div class="mycontainer" style="margin-top:20px">
+                <div>
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="+"> + </button>
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="-"> - </button>
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="/"> / </button>
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="%"> % </button>
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="**"> n1<sup>n2</sup> </button>
+
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="C"> <sup>n1 </sup>C
+                        <sub>n2</sub></button>
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="P"> <sup>n1 </sup>P
+                        <sub>n2</sub>
+                    </button>
+
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="ln1"> log<sub>n2</sub>n1
+                    </button>
+
+                    <button type="submit" class="submit btn btn-primary pad-btn" value="ln2"> log<sub>n2</sub>n1
+                    </button>
+
+                </div>
+                <h1 id="ans"></h1>
+            </div>
+
+
+        </form>
+    </div>
+</body>
+
+<script>
+
+    $(document).ready(function () {
+
+        for (let i = 1; i < 3; i++) {
+            $('#num' + i).on("input", function () {
+                var v = $(this).val();
+                if (!v || v == '')
+                    $('#num' + i + "Error").addClass('hideWarning');
+                else {
+                    var state = v.match(/^[0-9]+$/) != null; // checks if input is not null and number or not using regex
+                    if (state)
+                        $('#num' + i + "Error").addClass('hideWarning');
+                    else
+                        $('#num' + i + "Error").removeClass('hideWarning');
+                }
+            });
+        }
+
+
+        $('.submit').on('click', function (elt) {
+
+            $('#calc').on('submit', () => { return false; });
+
+            // checks if both inputs are not null and are numbers or not using regex
+            var valid_req = $('#num1').val().match(/^[0-9]+$/) != null && $('#num2').val().match(/^[0-9]+$/) != null;
+
+            if (valid_req) {
+
+                function get_data() {
+                    var json = {};
+                    document.querySelectorAll('#calc input').forEach(e => {
+                        json[e.name] = e.value;
+                    });
+                    return json;
+                }
+
+
+                $.ajax({
+                    type: "post",
+                    url: "/calculate",
+                    data: {
+                        nums: get_data(),
+                        op: $(this).val()
+                    },
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.op == 'ln1' || res.op == 'ln2') {
+                            var s = res.op == 'ln1' ? `Answer : log<sub>${res.b}</sub>${res.a}  = ` + res.ans : `Answer : log<sub>${res.a}</sub>${res.b} = ` + res.ans;
+                            $('#ans').html(s);
+                        }
+                        else if (res.op == 'C' || res.op == 'P') {
+                            $('#ans').html(`Answer : <sup>${res.a}</sup> ${res.op} <sub>${res.b}</sub> = ` + (res.ans == 0 ? 'Undefined' : res.ans));
+                        }
+                        else
+                            $('#ans').html(`Answer : ${res.a} ${res.op} ${res.b} = ` + res.ans);
+                    },
+                    failure: function (resp) {
+                        alert("something went wrong please refresh and try again!");
+                    }
+                });
+
+            }
+
+        });
+
+    });
+
+</script>
+
+</html>
